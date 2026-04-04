@@ -91,12 +91,59 @@ function BoolBadge({val}){
 }
 
 export default function App(){
+  const [authenticated,setAuthenticated]=useState(()=>{
+    try { return sessionStorage.getItem("inteldash_auth")==="1"; } catch { return false; }
+  });
+  const [pwInput,setPwInput]=useState("");
+  const [pwError,setPwError]=useState(false);
+
+  const ACCESS_PASSWORD = "inteldash2026";
+
+  const handleLogin=()=>{
+    if(pwInput===ACCESS_PASSWORD){
+      setAuthenticated(true);
+      try { sessionStorage.setItem("inteldash_auth","1"); } catch {}
+    } else {
+      setPwError(true);
+      setTimeout(()=>setPwError(false),2000);
+    }
+  };
+
+  if(!authenticated){
+    return(
+      <div style={{background:C.bg,color:C.text,fontFamily:mono,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{width:360,padding:32}}>
+          <div style={{fontSize:24,fontWeight:700,letterSpacing:"0.12em",marginBottom:8,textAlign:"center"}}>YOUNES INTELDASH</div>
+          <div style={{fontSize:10,color:C.textMuted,letterSpacing:"0.1em",textAlign:"center",marginBottom:32}}>MINING POOL INTELLIGENCE // RESTRICTED ACCESS</div>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:9,color:C.textMuted,letterSpacing:"0.08em",marginBottom:6}}>ACCESS CODE</div>
+            <input
+              type="password"
+              value={pwInput}
+              onChange={e=>{setPwInput(e.target.value);setPwError(false)}}
+              onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+              placeholder="Enter access code"
+              autoFocus
+              style={{width:"100%",fontFamily:mono,fontSize:13,padding:"10px 12px",background:C.surface,border:`1px solid ${pwError?C.red:C.border}`,color:C.text,outline:"none",boxSizing:"border-box",transition:"border-color 0.2s"}}
+            />
+          </div>
+          {pwError&&<div style={{fontSize:10,color:C.red,marginBottom:12}}>Invalid access code. Try again.</div>}
+          <button onClick={handleLogin} style={{width:"100%",fontFamily:mono,fontSize:11,padding:"10px 20px",background:"transparent",color:pwInput?C.accent:C.textMuted,border:`1px solid ${pwInput?C.accent:C.border}`,cursor:pwInput?"pointer":"default",letterSpacing:"0.06em"}}>
+            {">"} AUTHENTICATE
+          </button>
+          <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:24}}>INTERNAL USE ONLY</div>
+        </div>
+      </div>
+    );
+  }
+
   const [activeTab,setActiveTab]=useState("overview");
   const [pools,setPools]=useState([]);
   const [fees,setFees]=useState(null);
   const [difficulty,setDifficulty]=useState(null);
   const [btcPrice,setBtcPrice]=useState(null);
   const [mempoolInfo,setMempoolInfo]=useState(null);
+  const [networkHashrate,setNetworkHashrate]=useState(null);
   const [intelNotes,setIntelNotes]=useState([]);
   const [noteForm,setNoteForm]=useState({author:"",pool:"",content:"",type:"general"});
   const [loading,setLoading]=useState(true);
@@ -109,18 +156,20 @@ export default function App(){
 
   const fetchData=useCallback(async()=>{
     try{
-      const [poolsRes,feesRes,diffRes,priceRes,mempoolRes]=await Promise.allSettled([
+      const [poolsRes,feesRes,diffRes,priceRes,mempoolRes,hashRes]=await Promise.allSettled([
         fetch("https://mempool.space/api/v1/mining/pools/1w").then(r=>r.json()),
         fetch("https://mempool.space/api/v1/fees/recommended").then(r=>r.json()),
         fetch("https://mempool.space/api/v1/difficulty-adjustment").then(r=>r.json()),
         fetch("https://mempool.space/api/v1/prices").then(r=>r.json()),
         fetch("https://mempool.space/api/mempool").then(r=>r.json()),
+        fetch("https://mempool.space/api/v1/mining/hashrate/3d").then(r=>r.json()),
       ]);
       if(poolsRes.status==="fulfilled")setPools(poolsRes.value.pools||[]);
       if(feesRes.status==="fulfilled")setFees(feesRes.value);
       if(diffRes.status==="fulfilled")setDifficulty(diffRes.value);
       if(priceRes.status==="fulfilled")setBtcPrice(priceRes.value);
       if(mempoolRes.status==="fulfilled")setMempoolInfo(mempoolRes.value);
+      if(hashRes.status==="fulfilled")setNetworkHashrate(hashRes.value.currentHashrate);
       setLastUpdate(new Date());
     }catch(e){console.error(e)}
     setLoading(false);
@@ -177,7 +226,7 @@ export default function App(){
       {/* STATUS BAR */}
       <div style={{borderBottom:`1px solid ${C.border}`,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <span style={{fontWeight:700,fontSize:14,letterSpacing:"0.12em",color:C.text}}>YOUNES INTELDASH</span>
+          <span style={{fontWeight:700,fontSize:20,letterSpacing:"0.12em",color:C.text}}>YOUNES INTELDASH</span>
           <span style={{fontSize:10,color:C.textMuted}}>|</span>
           <span style={{fontSize:10,color:C.accent,display:"flex",alignItems:"center"}}><StatusDot color={C.accent}/>STATUS: ONLINE</span>
         </div>
@@ -220,7 +269,7 @@ export default function App(){
             <SectionHeader num="01" title="MARKET_OVERVIEW" subtitle="Real-time Bitcoin mining network metrics" live/>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:10,marginBottom:32}}>
               <MetricCard label="BTC PRICE" value={btcPrice?`$${fmtNum(btcPrice.USD)}`:null} accent/>
-              <MetricCard label="NETWORK HASHRATE" value={difficulty?fmtHash(difficulty.currentHashrate):null}/>
+              <MetricCard label="NETWORK HASHRATE" value={networkHashrate?fmtHash(networkHashrate):null}/>
               <MetricCard label="DIFFICULTY" value={difficulty?(difficulty.difficultyChange>0?"+":"")+difficulty.difficultyChange?.toFixed(2)+"%":null} sub={difficulty?`Next adj: ~${Math.abs(difficulty.remainingBlocks||0)} blocks`:""}/>
               <MetricCard label="FASTEST FEE" value={fees?`${fees.fastestFee} sat/vB`:null}/>
               <MetricCard label="MEMPOOL SIZE" value={mempoolInfo?`${(mempoolInfo.vsize/1e6).toFixed(1)} MvB`:null} sub={mempoolInfo?`${fmtNum(mempoolInfo.count)} txns`:""}/>
@@ -365,22 +414,6 @@ export default function App(){
                     <span style={{fontSize:9,color:C.textMuted}}>{m.full}</span>
                   </div>
                   <div style={{fontSize:11,color:C.textSec,lineHeight:1.6}}>{m.desc}</div>
-                </div>
-              ))}
-            </div>
-            <SectionHeader num="03" title="KEY_INSIGHTS" subtitle="What the fee landscape tells us"/>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {[
-                "Binance Pool's 0.5% FPPS is a loss-leader — the real product is keeping miners inside the Binance ecosystem (exchange, staking, lending). Custodial tradeoff is the catch.",
-                "Braiins Pool's 0% PPLNS + Lightning payouts combo is the most miner-friendly option for small operators. No minimum payout via Lightning eliminates dust accumulation.",
-                "Foundry's opaque tiered pricing is standard for institutional pools but makes comparison difficult. Likely 0–2% depending on scale — negotiate aggressively.",
-                "F2Pool's 4% FPPS is the highest among major pools. Their value is reliability and multi-coin support, not fee competitiveness.",
-                "OCEAN's TIDES model is structurally different — non-custodial and 0% on subsidy. Small pool, higher variance, but strongest decentralization properties.",
-                "LuxOS firmware's hidden 2.8% dev fee means Luxor's total cost is higher than their pool fee suggests. Always factor firmware costs into any comparison.",
-              ].map((t,i)=>(
-                <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",gap:10}}>
-                  <span style={{color:C.accent,fontWeight:600,flexShrink:0}}>{">"}</span>
-                  <span style={{fontSize:12,color:C.textSec,lineHeight:1.6}}>{t}</span>
                 </div>
               ))}
             </div>
