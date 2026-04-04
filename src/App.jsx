@@ -37,16 +37,28 @@ const FEE_DATA = [
 
 const TICKER_ITEMS = ["HASHRATE DISTRIBUTION","FEE COMPARISON","POOL RANKINGS","DIFFICULTY ADJUSTMENT","COMPETITOR INTELLIGENCE","TEAM INTEL","MARKET OVERVIEW","MEMPOOL STATUS","PAYOUT STRATEGIES","BLOCK REWARDS"];
 
-// Storage helper — uses localStorage for persistence
-const storage = {
-  getAll: () => {
+// Supabase config
+const SUPABASE_URL = "https://jbxytpedbjtxitmglscf.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieHl0cGVkYmp0eGl0bWdsc2NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTUyNDcsImV4cCI6MjA5MDg5MTI0N30.nPwQNG7H9Q4k2c89EaI0m-5GgLiziznxFFgmdCNXn9o";
+const sbHeaders = {"apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json","Prefer":"return=minimal"};
+
+const supabase = {
+  async getAll() {
     try {
-      const data = localStorage.getItem("inteldash_notes");
-      return data ? JSON.parse(data) : [];
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/intel_notes?order=ts.desc`, {headers:{"apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`}});
+      if(!res.ok) return [];
+      return await res.json();
     } catch { return []; }
   },
-  save: (notes) => {
-    try { localStorage.setItem("inteldash_notes", JSON.stringify(notes)); } catch {}
+  async insert(note) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/intel_notes`, {method:"POST",headers:sbHeaders,body:JSON.stringify(note)});
+    } catch(e) { console.error(e); }
+  },
+  async remove(id) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/intel_notes?id=eq.${id}`, {method:"DELETE",headers:sbHeaders});
+    } catch(e) { console.error(e); }
   },
 };
 
@@ -177,24 +189,25 @@ export default function App(){
 
   useEffect(()=>{
     fetchData();
-    setIntelNotes(storage.getAll());
+    supabase.getAll().then(setIntelNotes);
     const iv=setInterval(fetchData,120000);
-    return()=>clearInterval(iv);
+    const intelIv=setInterval(()=>supabase.getAll().then(setIntelNotes),30000);
+    return()=>{clearInterval(iv);clearInterval(intelIv)};
   },[fetchData]);
 
-  const submitNote=()=>{
+  const submitNote=async()=>{
     if(!noteForm.content.trim()||!noteForm.author.trim())return;
     const note={...noteForm,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now()};
-    const updated=[note,...intelNotes];
-    setIntelNotes(updated);
-    storage.save(updated);
+    setIntelNotes(prev=>[note,...prev]);
     setNoteForm({author:noteForm.author,pool:"",content:"",type:"general"});
+    await supabase.insert(note);
+    const fresh=await supabase.getAll();
+    setIntelNotes(fresh);
   };
 
-  const deleteNote=(id)=>{
-    const updated=intelNotes.filter(n=>n.id!==id);
-    setIntelNotes(updated);
-    storage.save(updated);
+  const deleteNote=async(id)=>{
+    setIntelNotes(prev=>prev.filter(n=>n.id!==id));
+    await supabase.remove(id);
   };
 
   const fmtHash=(h)=>{if(!h)return"—";if(h>=1e18)return(h/1e18).toFixed(1)+" EH/s";if(h>=1e15)return(h/1e15).toFixed(1)+" PH/s";return h.toFixed(0)};
