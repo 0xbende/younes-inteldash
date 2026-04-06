@@ -108,47 +108,6 @@ export default function App(){
   });
   const [pwInput,setPwInput]=useState("");
   const [pwError,setPwError]=useState(false);
-
-  const ACCESS_PASSWORD = "inteldash2026";
-
-  const handleLogin=()=>{
-    if(pwInput===ACCESS_PASSWORD){
-      setAuthenticated(true);
-      try { sessionStorage.setItem("inteldash_auth","1"); } catch {}
-    } else {
-      setPwError(true);
-      setTimeout(()=>setPwError(false),2000);
-    }
-  };
-
-  if(!authenticated){
-    return(
-      <div style={{background:C.bg,color:C.text,fontFamily:mono,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{width:360,padding:32}}>
-          <div style={{fontSize:24,fontWeight:700,letterSpacing:"0.12em",marginBottom:8,textAlign:"center"}}>YOUNES INTELDASH</div>
-          <div style={{fontSize:10,color:C.textMuted,letterSpacing:"0.1em",textAlign:"center",marginBottom:32}}>MINING POOL INTELLIGENCE // RESTRICTED ACCESS</div>
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:9,color:C.textMuted,letterSpacing:"0.08em",marginBottom:6}}>ACCESS CODE</div>
-            <input
-              type="password"
-              value={pwInput}
-              onChange={e=>{setPwInput(e.target.value);setPwError(false)}}
-              onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-              placeholder="Enter access code"
-              autoFocus
-              style={{width:"100%",fontFamily:mono,fontSize:13,padding:"10px 12px",background:C.surface,border:`1px solid ${pwError?C.red:C.border}`,color:C.text,outline:"none",boxSizing:"border-box",transition:"border-color 0.2s"}}
-            />
-          </div>
-          {pwError&&<div style={{fontSize:10,color:C.red,marginBottom:12}}>Invalid access code. Try again.</div>}
-          <button onClick={handleLogin} style={{width:"100%",fontFamily:mono,fontSize:11,padding:"10px 20px",background:"transparent",color:pwInput?C.accent:C.textMuted,border:`1px solid ${pwInput?C.accent:C.border}`,cursor:pwInput?"pointer":"default",letterSpacing:"0.06em"}}>
-            {">"} AUTHENTICATE
-          </button>
-          <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:24}}>INTERNAL USE ONLY</div>
-        </div>
-      </div>
-    );
-  }
-
   const [activeTab,setActiveTab]=useState("overview");
   const [pools,setPools]=useState([]);
   const [fees,setFees]=useState(null);
@@ -165,6 +124,18 @@ export default function App(){
   const [feeSort,setFeeSort]=useState("pool");
   const [feeExpanded,setFeeExpanded]=useState(null);
   const [feePayout,setFeePayout]=useState("fpps");
+
+  const ACCESS_PASSWORD = "inteldash2026";
+
+  const handleLogin=()=>{
+    if(pwInput===ACCESS_PASSWORD){
+      setAuthenticated(true);
+      try { sessionStorage.setItem("inteldash_auth","1"); } catch {}
+    } else {
+      setPwError(true);
+      setTimeout(()=>setPwError(false),2000);
+    }
+  };
 
   const fetchData=useCallback(async()=>{
     try{
@@ -234,12 +205,40 @@ export default function App(){
 
   const filteredCompetitors=filterThreat==="all"?POOLS:POOLS.filter(p=>p.threat===filterThreat);
 
+  if(!authenticated){
+    return(
+      <div style={{background:C.bg,color:C.text,fontFamily:mono,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{width:360,padding:32}}>
+          <div style={{fontSize:24,fontWeight:700,letterSpacing:"0.12em",marginBottom:8,textAlign:"center"}}>EMCD INTELDASH</div>
+          <div style={{fontSize:10,color:C.textMuted,letterSpacing:"0.1em",textAlign:"center",marginBottom:32}}>MINING POOL INTELLIGENCE // RESTRICTED ACCESS</div>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:9,color:C.textMuted,letterSpacing:"0.08em",marginBottom:6}}>ACCESS CODE</div>
+            <input
+              type="password"
+              value={pwInput}
+              onChange={e=>{setPwInput(e.target.value);setPwError(false)}}
+              onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+              placeholder="Enter access code"
+              autoFocus
+              style={{width:"100%",fontFamily:mono,fontSize:13,padding:"10px 12px",background:C.surface,border:`1px solid ${pwError?C.red:C.border}`,color:C.text,outline:"none",boxSizing:"border-box",transition:"border-color 0.2s"}}
+            />
+          </div>
+          {pwError&&<div style={{fontSize:10,color:C.red,marginBottom:12}}>Invalid access code. Try again.</div>}
+          <button onClick={handleLogin} style={{width:"100%",fontFamily:mono,fontSize:11,padding:"10px 20px",background:"transparent",color:pwInput?C.accent:C.textMuted,border:`1px solid ${pwInput?C.accent:C.border}`,cursor:pwInput?"pointer":"default",letterSpacing:"0.06em"}}>
+            {">"} AUTHENTICATE
+          </button>
+          <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:24}}>INTERNAL USE ONLY</div>
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div style={{background:C.bg,color:C.text,fontFamily:mono,minHeight:"100vh",fontSize:13}}>
       {/* STATUS BAR */}
       <div style={{borderBottom:`1px solid ${C.border}`,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <span style={{fontWeight:700,fontSize:20,letterSpacing:"0.12em",color:C.text}}>YOUNES INTELDASH</span>
+          <span style={{fontWeight:700,fontSize:20,letterSpacing:"0.12em",color:C.text}}>EMCD INTELDASH</span>
           <span style={{fontSize:10,color:C.textMuted}}>|</span>
           <span style={{fontSize:10,color:C.accent,display:"flex",alignItems:"center"}}><StatusDot color={C.accent}/>STATUS: ONLINE</span>
         </div>
@@ -461,18 +460,8 @@ export default function App(){
         {activeTab==="competitors"&&(
           <div>
             <SectionHeader num="01" title="COMPETITOR_INTELLIGENCE" subtitle="Profiles of major mining pool operators"/>
-            <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-              {["all","high","medium","low"].map(f=>(
-                <button key={f} onClick={()=>setFilterThreat(f)} style={{
-                  fontFamily:mono,fontSize:10,padding:"5px 12px",letterSpacing:"0.06em",
-                  background:filterThreat===f?(f==="high"?"rgba(255,59,59,0.12)":f==="medium"?"rgba(240,160,0,0.12)":f==="low"?"rgba(119,119,119,0.12)":C.accentBg):"transparent",
-                  color:filterThreat===f?(f==="high"?C.red:f==="medium"?C.amber:f==="low"?C.textSec:C.accent):C.textMuted,
-                  border:`1px solid ${filterThreat===f?(f==="high"?C.red:f==="medium"?C.amber:f==="low"?C.textSec:C.accent):C.border}`,cursor:"pointer"
-                }}>{f==="all"?"ALL":`THREAT: ${f.toUpperCase()}`}</button>
-              ))}
-            </div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {filteredCompetitors.map(comp=>{
+              {POOLS.map(comp=>{
                 const livePool=pools.find(p=>p.name?.toLowerCase().includes(comp.slug.split(" ")[0].toLowerCase()));
                 const share=livePool&&totalBlocks>0?((livePool.blockCount/totalBlocks)*100):null;
                 const expanded=expandedPool===comp.id;
@@ -483,7 +472,6 @@ export default function App(){
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6,flexWrap:"wrap"}}>
                           <span style={{fontSize:14,fontWeight:600,color:C.text}}>{comp.name}</span>
-                          <ThreatBadge level={comp.threat}/>
                           {share!==null&&<span style={{fontSize:10,color:C.accent,background:C.accentBg,padding:"2px 8px"}}>{share.toFixed(1)}% HASHRATE</span>}
                         </div>
                         <div style={{fontSize:10,color:C.textSec,display:"flex",gap:12,flexWrap:"wrap"}}>
@@ -502,7 +490,7 @@ export default function App(){
                           <div style={{marginBottom:12}}>
                             <div style={{fontSize:10,color:C.textMuted,letterSpacing:"0.08em",marginBottom:6}}>LIVE METRICS (7D)</div>
                             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(100px, 1fr))",gap:8}}>
-                              {[{l:"BLOCKS",v:livePool.blockCount,c:C.accent},{l:"SHARE",v:share?.toFixed(2)+"%",c:C.text},{l:"EMPTY",v:livePool.emptyBlocks||0,c:(livePool.emptyBlocks||0)>0?C.amber:C.textSec},{l:"AVG/DAY",v:(livePool.blockCount/7).toFixed(1),c:C.textSec}].map(m=>(
+                              {[{l:"BLOCKS",v:livePool.blockCount,c:C.accent},{l:"SHARE",v:share?.toFixed(2)+"%",c:C.text}].map(m=>(
                                 <div key={m.l} style={{background:C.surface,padding:"8px 10px"}}><div style={{fontSize:9,color:C.textMuted}}>{m.l}</div><div style={{fontSize:16,fontWeight:600,color:m.c}}>{m.v}</div></div>
                               ))}
                             </div>
@@ -589,7 +577,7 @@ export default function App(){
       {/* FOOTER */}
       <div style={{borderTop:`1px solid ${C.border}`,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginTop:40}}>
         <div style={{fontSize:10,color:C.textMuted,display:"flex",gap:16,alignItems:"center"}}>
-          <span style={{fontWeight:600,color:C.textSec}}>YOUNES INTELDASH</span>
+          <span style={{fontWeight:600,color:C.textSec}}>EMCD INTELDASH</span>
           <span>STATUS: <span style={{color:C.accent}}>ONLINE</span></span>
         </div>
         <div style={{fontSize:9,color:C.textMuted}}>DATA: MEMPOOL.SPACE API // REFRESH: 120s // INTERNAL USE ONLY</div>
